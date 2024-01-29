@@ -17,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author tangcheng_cd
@@ -45,11 +48,9 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
     public void testCreate() {
         try {
             // 1 创建文档对象
-            Document document = new Document();
-            // 创建并添加字段信息。参数：字段的名称、字段的值、是否存储，这里选Store.YES代表存储到文档列表。Store.NO代表不存储
-            document.add(new StringField("id", "1", Field.Store.YES));
-            // 这里我们title字段需要用TextField，即创建索引又会被分词。
-            document.add(new TextField("title", "谷歌地图之父跳槽facebook", Field.Store.YES));
+            List<Document> documents = new ArrayList<>();
+            // 收集文档数据
+            collectDocument(documents);
 
             // 2 索引目录类,指定索引在硬盘中的位置
             Directory directory = FSDirectory.open(new File(luceneDemoConfig.getDemoIndexDbPath("testCreate")).toPath());
@@ -60,13 +61,36 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
             // 5 创建索引的写出工具类。参数：索引的目录和配置信息
             IndexWriter indexWriter = new IndexWriter(directory, conf);
             // 6 把文档交给IndexWriter
-            indexWriter.addDocument(document);
+            // indexWriter.addDocument(document);
+            indexWriter.addDocuments(documents);
             // 7 提交
             indexWriter.commit();
             // 8 关闭
             indexWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void collectDocument(List<Document> documents) {
+        List<String> sourceTxt = Arrays.asList(
+                "谷歌地图之父跳槽facebook",
+                "谷歌地图之父加盟facebook",
+                "谷歌地图创始人拉斯离开谷歌加盟Facebook",
+                "谷歌地图之父跳槽Facebook与wave项目取消有关",
+                "谷歌地图之父拉斯加盟社交网站Facebook"
+        );
+        for (int i = 0; i < sourceTxt.size(); i++) {
+            String id = String.valueOf(i + 1);
+            String content = sourceTxt.get(i);
+
+            Document document = new Document();
+            // 创建并添加字段信息。参数：字段的名称、字段的值、是否存储，这里选Store.YES代表存储到文档列表。Store.NO代表不存储
+            document.add(new StringField("id", id, Field.Store.YES));
+            // 这里我们title字段需要用TextField，即创建索引又会被分词。
+            document.add(new TextField("title", content, Field.Store.YES));
+
+            documents.add(document);
         }
     }
 }
