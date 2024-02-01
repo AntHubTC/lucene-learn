@@ -10,7 +10,6 @@ import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -86,8 +85,12 @@ public class AnalyzerTest extends LuceneLearnApplicationTests {
         aly = new SmartChineseAnalyzer();
         AnalyzerUtil.displayToken(text, aly);
 
-        System.out.println("分词器-IKAnalyzer:");
+        // IK 采用了特有的“正向迭代最细粒度切分算法“，支持细粒度和智能分词两种切分模式；
+        System.out.println("分词器-IKAnalyzer: 细粒度");
         aly = new IKAnalyzer();
+        AnalyzerUtil.displayToken(text, aly);
+        System.out.println("分词器-IKAnalyzer: 智能");
+        aly = new IKAnalyzer(true);
         AnalyzerUtil.displayToken(text, aly);
 
         // Jcseg https://gitee.com/lionsoul/jcseg
@@ -113,11 +116,9 @@ public class AnalyzerTest extends LuceneLearnApplicationTests {
             AnalyzerUtil.displayToken(text, aly);
         }
 
-
-        // paoding-analysis
+        // paoding-analysis 庖丁解牛中文分词
         // mmseg4j-solr
         // ansj_seg
-        // imdict-chinese-analyzer
     }
 
     private static SegmenterConfig getSegmenterConfig() {

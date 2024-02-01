@@ -2,7 +2,9 @@ package com.tc.lucene.basic;
 
 import com.tc.lucene.LuceneLearnApplicationTests;
 import com.tc.lucene.config.LuceneDemoConfig;
+import com.tc.lucene.util.AnalyzerUtil;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -13,6 +15,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.junit.jupiter.api.Test;
+import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -55,7 +58,7 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
             // 2 索引目录类,指定索引在硬盘中的位置
             Directory directory = FSDirectory.open(new File(luceneDemoConfig.getDemoIndexDbPath("testCreate")).toPath());
             // 3 创建分词器对象
-            Analyzer analyzer = new StandardAnalyzer();
+            Analyzer analyzer = new SmartChineseAnalyzer();
             // 4 索引写出工具的配置对象
             IndexWriterConfig conf = new IndexWriterConfig(analyzer);
             // 5 创建索引的写出工具类。参数：索引的目录和配置信息
@@ -72,14 +75,20 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
         }
     }
 
+    /**
+     * 查看分词情况
+     */
+    @Test
+    public void tokenViewer() {
+        for (String sourceTxt : getSourceTxtData()) {
+            // Analyzer analyzer = new StandardAnalyzer();
+            Analyzer analyzer = new SmartChineseAnalyzer();
+            AnalyzerUtil.displayToken(sourceTxt, analyzer);
+        }
+    }
+
     private void collectDocument(List<Document> documents) {
-        List<String> sourceTxt = Arrays.asList(
-                "谷歌地图之父跳槽facebook",
-                "谷歌地图之父加盟facebook",
-                "谷歌地图创始人拉斯离开谷歌加盟Facebook",
-                "谷歌地图之父跳槽Facebook与wave项目取消有关",
-                "谷歌地图之父拉斯加盟社交网站Facebook"
-        );
+        List<String> sourceTxt = getSourceTxtData();
         for (int i = 0; i < sourceTxt.size(); i++) {
             String id = String.valueOf(i + 1);
             String content = sourceTxt.get(i);
@@ -92,5 +101,16 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
 
             documents.add(document);
         }
+    }
+
+    private static List<String> getSourceTxtData() {
+        return Arrays.asList(
+                "谷歌地图之父跳槽facebook",
+                "谷歌地图之父加盟facebook",
+                "谷歌地图创始人拉斯离开谷歌加盟Facebook",
+                "谷歌地图之父跳槽Facebook与wave项目取消有关",
+                "谷歌地图之父拉斯加盟社交网站Facebook",
+                "床前明月光，疑是地上霜; 今晚有点冷，有点睡不戳。"
+        );
     }
 }
