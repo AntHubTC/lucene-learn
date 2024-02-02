@@ -215,6 +215,16 @@ public class LocalMavenRepoTest extends LuceneLearnApplicationTests {
                 }
             }
         }
+
+        // 做下排序
+        mavenJars.sort((a, b) -> {
+            MavenArtifact a1 = (MavenArtifact) a;
+            MavenArtifact b1 = (MavenArtifact) b;
+            if (a1.getArtifactId().equals(b1.getArtifactId())) {
+                return b1.getVersion().compareTo(a1.getVersion());
+            }
+            return a1.getArtifactId().compareTo(b1.getArtifactId());
+        });
     }
 
 
