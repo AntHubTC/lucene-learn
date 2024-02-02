@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 
 /**
- * @author tangcheng_cd
+ * @author AnthubTC
  * @version 1.0
  * @className LuceneDemoConfig
  * @description

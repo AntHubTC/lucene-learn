@@ -15,6 +15,9 @@ import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
@@ -32,7 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * @author tangcheng_cd
+ * @author AnthubTC
  * @version 1.0
  * @className BaseDemoTest
  * @description
@@ -51,10 +54,11 @@ public class QueryTest extends LuceneLearnApplicationTests {
             // SmartChineseAnalyzer没有切分出来的分词
             "谷歌地图", "谷歌地图之父加盟"
     })
+    // 查询解析器（Query Parser）：Lucene 的查询解析器可以将用户输入的查询字符串解析为 Lucene 查询对象，从而进行有效的匹配和搜索。
     public void queryParserTest(String val) throws ParseException, IOException {
         // QueryParser会使用分词器分词后匹配查询
         // 这里特别注意：查询的分词器要和索引的时候的分词器保持一致，否则搜索结果匹配会不理想
-        SmartChineseAnalyzer analyzer = new SmartChineseAnalyzer();
+        Analyzer analyzer = new SmartChineseAnalyzer();
         QueryParser parser = new QueryParser("title", analyzer);
         Query query = parser.parse(val);
 
@@ -207,6 +211,20 @@ public class QueryTest extends LuceneLearnApplicationTests {
         // MatchAllDocsQuery 它的作用是匹配索引中的所有文档。当你希望检索索引中的所有文档时，可以使用 MatchAllDocsQuery。这在一些需要遍历
         // 整个索引的情况下非常有用，比如统计文档总数、分析整个索引的内容等。
         Query query = new MatchAllDocsQuery();
+
+        queryData(query);
+    }
+
+    @DisplayName("SpanQuery")
+    @Test
+    public void testSpanQuery() throws IOException {
+        // SpanQuery 是 Lucene 中的一种特殊类型的查询，它用于在文本中执行更精细的短语和位置相关的匹配
+        // 创建 SpanTermQuery 对象，用于匹配 "quick"
+        SpanTermQuery quickQuery = new SpanTermQuery(new Term("title", "今晚"));
+        // 创建 SpanTermQuery 对象，用于匹配 "brown"
+        SpanTermQuery brownQuery = new SpanTermQuery(new Term("title", "冷"));
+        // 创建 query 对象，将 quickQuery 和 brownQuery 之间的距离限制为1
+        SpanQuery query = new SpanNearQuery(new SpanQuery[]{quickQuery, brownQuery}, 1, true);
 
         queryData(query);
     }

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
- * @author tangcheng_cd
+ * @author AnthubTC
  * @version 1.0
  * @className AnalyzerUtil
  * @description
