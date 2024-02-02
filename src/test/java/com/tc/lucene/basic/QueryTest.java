@@ -4,16 +4,20 @@ import com.tc.lucene.LuceneLearnApplicationTests;
 import com.tc.lucene.config.LuceneDemoConfig;
 import com.tc.lucene.util.AnalyzerUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.Term;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.RAMDirectory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,6 +26,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author tangcheng_cd
@@ -31,6 +39,7 @@ import java.io.IOException;
  * @date 2024/1/15 14:06
  **/
 @Slf4j
+@DisplayName("查询讲解")
 public class QueryTest extends LuceneLearnApplicationTests {
     @Resource
     private LuceneDemoConfig luceneDemoConfig;
@@ -75,7 +84,7 @@ public class QueryTest extends LuceneLearnApplicationTests {
     public void testTermRangeQuery() throws IOException {
         // TermRangeQuery  当要搜索一系列文本术语时
         // 适用场景：方法通常用于需要根据字段值的字典顺序执行范围查询。
-        Query query = TermRangeQuery.newStringRange("title", "faca", "facf", true, true);;
+        Query query = TermRangeQuery.newStringRange("title", "faca", "facf", true, true);
 
         queryData(query);
     }
@@ -83,16 +92,24 @@ public class QueryTest extends LuceneLearnApplicationTests {
     @DisplayName("PrefixQuery")
     @ParameterizedTest
     @ValueSource(strings = {
-            "谷", "歌", "地图",
-            // SmartChineseAnalyzer没有切分出来的分词
-            "谷歌地图", "谷歌地图之父加盟"
+            "ls", "ch", "p", "ps"
     })
     public void testPrefixQuery(String val) throws IOException {
         // PrefixQuery 用于匹配索引以指定字符串开头的分词（注意是短语，而不是源文档）。
+        List<String> sourceTxt = Arrays.asList("ls","lsof","lspci","ps","ps aux","pkill","pwd","cat","cd","cp","mv",
+                "rm","touch","grep","find","chmod","chown","chgrp","history","man");
+        // 文档对象列表
+        List<Document> documents = sourceTxt.stream().map(srcTxt -> {
+            Document document = new Document();
+            document.add(new TextField("title", srcTxt, Field.Store.YES));
+            return document;
+        }).collect(Collectors.toList());
+        Directory indexDir = writeIndexDir(new StandardAnalyzer(), documents);
+
         Term term = new Term("title", val);
         Query query = new PrefixQuery(term);
 
-        queryData(query);
+        queryData(query, indexDir);
     }
 
     @DisplayName("BooleanQuery")
@@ -125,6 +142,7 @@ public class QueryTest extends LuceneLearnApplicationTests {
     @ParameterizedTest
     @ValueSource(strings = {
             "谷,歌",
+            "歌,谷", // 和顺序有关
             "谷,歌,之父加盟"
     })
     public void testPhraseQuery(String val) throws IOException {
@@ -134,23 +152,98 @@ public class QueryTest extends LuceneLearnApplicationTests {
             // 添加多个单词组成序列
             qryBuilder.add(new Term("title", str));
         }
+        // 所有项都必须满足
         PhraseQuery query = qryBuilder.build();
 
         queryData(query);
     }
 
-    // WildcardQuery 用于使用任何字符序列的'*'等通配符搜索文档，？ 匹配单个字符。
+    @DisplayName("WildcardQuery")
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "谷歌",
+            "谷歌地图之父*",
+            "谷歌地图之父??facebook",
+            "*faceboo?"
+    })
+    public void testWildcardQuery(String val) throws IOException {
+        // KeywordAnalyzer，它可以用于不对输入进行分词处理，而是将整个输入作为一个单独的标记
+        Directory indexDirectory = writeIndexDir(new KeywordAnalyzer());
 
-    // FuzzyQuery用于使用模糊实现来搜索文档，模糊实现是基于编辑距离算法的近似搜索。
+        // WildcardQuery 用于使用任何字符序列的'*'等通配符搜索文档，？ 匹配单个字符。
+        Term term = new Term("title", val);
+        Query query = new WildcardQuery(term);
 
-    // MatchAllDocsQuery 顾名思义匹配所有文档。
+        queryData(query, indexDirectory);
+    }
+
+    @DisplayName("FuzzyQuery")
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "apple",
+            "appl",
+            "banana"
+    })
+    public void testFuzzyQuery(String val) throws IOException {
+        // FuzzyQuery 用于执行模糊查询，允许在搜索时对术语进行模糊匹配。
+        List<String> sourceTxt = Arrays.asList("apple", "banana", "application", "aple", "appler");
+        // 文档对象列表
+        List<Document> documents = sourceTxt.stream().map(srcTxt -> {
+            Document document = new Document();
+            document.add(new TextField("title", srcTxt, Field.Store.YES));
+            return document;
+        }).collect(Collectors.toList());
+        Directory indexDir = writeIndexDir(new StandardAnalyzer(), documents);
+
+        Term term = new Term("title", val);
+        Query query = new FuzzyQuery(term);
+
+        queryData(query, indexDir);
+    }
+
+    @DisplayName("MatchAllDocsQuery")
+    @Test
+    public void testMatchAllDocsQuery() throws IOException {
+        // MatchAllDocsQuery 它的作用是匹配索引中的所有文档。当你希望检索索引中的所有文档时，可以使用 MatchAllDocsQuery。这在一些需要遍历
+        // 整个索引的情况下非常有用，比如统计文档总数、分析整个索引的内容等。
+        Query query = new MatchAllDocsQuery();
+
+        queryData(query);
+    }
+
+    private static Directory writeIndexDir() throws IOException {
+        return writeIndexDir(new StandardAnalyzer());
+    }
+
+    private static Directory writeIndexDir(Analyzer analyzer) throws IOException {
+        // 文档对象列表
+        List<Document> documents = new ArrayList<>();
+        // 收集文档数据
+        BaseDemoTest.collectDocument(documents);
+
+        return writeIndexDir(analyzer, documents);
+    }
+
+    private static Directory writeIndexDir(Analyzer analyzer, List<Document> documents) throws IOException {
+        // RAMDirectory写到内存的索引，已经过期，有其它类可以代替
+        Directory indexDirectory = new RAMDirectory();
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
+        IndexWriter writer = new IndexWriter(indexDirectory, config);
+        writer.addDocuments(documents);
+        writer.close();
+        return indexDirectory;
+    }
 
     private void queryData(Query query) throws IOException {
         // 设置索引存储路径
         Directory indexDir = FSDirectory.open(new File(luceneDemoConfig.getDemoIndexDbPath("testCreate")).toPath());
 
+        queryData(query, indexDir);
+    }
+
+    private static void queryData(Query query, Directory indexDir) throws IOException {
         // 创建索引读取器
-        try(IndexReader indexReader = DirectoryReader.open(indexDir)) {
+        try (IndexReader indexReader = DirectoryReader.open(indexDir)) {
             IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
             TopDocs topDocs = indexSearcher.search(query, 10);

@@ -33,6 +33,7 @@ import java.util.stream.Stream;
  * @description
  * @date 2024/1/19 11:27
  **/
+@DisplayName("分词器")
 public class AnalyzerTest extends LuceneLearnApplicationTests {
 
     public static Stream<Arguments> textSource() {
@@ -72,6 +73,9 @@ public class AnalyzerTest extends LuceneLearnApplicationTests {
         System.out.println("WhitespaceAnalyzer:");
         aly = new WhitespaceAnalyzer();
         AnalyzerUtil.displayToken(text, aly);
+
+        // Lucene 提供了一个特殊的分词器叫做 KeywordAnalyzer，它可以用于不对输入进行分词处理，而是将整个输入作为一个单独的标记。
+        // 这在某些场景下非常有用，比如需要精确匹配某些特定的字段或者术语时。
     }
 
     @DisplayName("中文分词器")

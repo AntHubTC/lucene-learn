@@ -5,7 +5,6 @@ import com.tc.lucene.config.LuceneDemoConfig;
 import com.tc.lucene.util.AnalyzerUtil;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -14,8 +13,8 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -31,6 +30,7 @@ import java.util.List;
  * @description
  * @date 2024/1/15 14:06
  **/
+@DisplayName("基础demo")
 public class BaseDemoTest extends LuceneLearnApplicationTests {
 
     @Resource
@@ -87,7 +87,7 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
         }
     }
 
-    private void collectDocument(List<Document> documents) {
+    public static void collectDocument(List<Document> documents) {
         List<String> sourceTxt = getSourceTxtData();
         for (int i = 0; i < sourceTxt.size(); i++) {
             String id = String.valueOf(i + 1);
@@ -103,7 +103,7 @@ public class BaseDemoTest extends LuceneLearnApplicationTests {
         }
     }
 
-    private static List<String> getSourceTxtData() {
+    public static List<String> getSourceTxtData() {
         return Arrays.asList(
                 "谷歌地图之父跳槽facebook",
                 "谷歌地图之父加盟facebook",
