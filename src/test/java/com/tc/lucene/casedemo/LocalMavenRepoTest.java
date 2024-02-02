@@ -11,7 +11,7 @@ import com.tc.lucene.dto.MavenJarClass;
 import com.tc.lucene.enums.MavenContentType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -52,7 +52,7 @@ public class LocalMavenRepoTest extends LuceneLearnApplicationTests {
         // 2 索引目录类,指定索引在硬盘中的位置
         Directory directory = FSDirectory.open(new File(getIdxSavePath()).toPath());
         // 3 创建分词器对象
-        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = new SimpleAnalyzer();
         // 4 索引写出工具的配置对象
         IndexWriterConfig conf = new IndexWriterConfig(analyzer);
         // 5 创建索引的写出工具类。参数：索引的目录和配置信息
@@ -128,7 +128,7 @@ public class LocalMavenRepoTest extends LuceneLearnApplicationTests {
     }
 
     private void jarClassSearch() {
-        QueryParser parser = new QueryParser("className", new StandardAnalyzer());
+        QueryParser parser = new QueryParser("className", new SimpleAnalyzer());
         while (true) {
             if (mavenSearch(MavenContentType.Clazz)) return;
         }
@@ -170,7 +170,7 @@ public class LocalMavenRepoTest extends LuceneLearnApplicationTests {
             for (int i = 0; i < mavenJars.size(); i++) {
                 MavenJar mavenJar = mavenJars.get(i);
                 MavenJarClass mavenJar1 = (MavenJarClass) mavenJar;
-                System.out.println((i+1) + "、" + mavenJar1.getGroupId() + "." + mavenJar1.getArtifactId() + "  " + mavenJar1.getVersion());
+                System.out.println((i+1) + "、" + mavenJar1.getGroupId() + "  " + mavenJar1.getArtifactId() + "  " + mavenJar1.getVersion());
                 System.out.println("\t\t-- " + mavenJar1.getClassName());
             }
         }
@@ -178,14 +178,14 @@ public class LocalMavenRepoTest extends LuceneLearnApplicationTests {
             for (int i = 0; i < mavenJars.size(); i++) {
                 MavenJar mavenJar = mavenJars.get(i);
                 MavenArtifact mavenArtifact = (MavenArtifact) mavenJar;
-                System.out.println((i+1) + "、" + mavenArtifact.getGroupId() + "." + mavenArtifact.getArtifactId() + "  " + mavenArtifact.getVersion());
+                System.out.println((i+1) + "、" + mavenArtifact.getGroupId() + "  " + mavenArtifact.getArtifactId() + "  " + mavenArtifact.getVersion());
             }
         }
     }
 
     private void luceneSearch(MavenContentType searchType, String optIn, List<MavenJar> mavenJars) throws ParseException, IOException {
         String filed = MavenContentType.Artifact == searchType ? "artifactId" : "className";
-        Query query1 = new QueryParser(filed, new StandardAnalyzer()).parse(optIn);
+        Query query1 = new QueryParser(filed, new SimpleAnalyzer()).parse(optIn);
         Query query2 = new TermQuery(new Term("type", String.valueOf(searchType.getType())));
 
         BooleanQuery.Builder booleanQueryBuilder = new BooleanQuery.Builder();
