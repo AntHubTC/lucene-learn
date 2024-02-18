@@ -73,7 +73,8 @@ public class HighlighterTest extends LuceneLearnApplicationTests {
             // 默认html标签
             // highlighter.setFormatter(new DefaultPassageFormatter());
             // 自定义前后标识
-            highlighter.setFormatter(new DefaultPassageFormatter(" 【", "】 ", "... ", false));
+            highlighter.setFormatter(new DefaultPassageFormatter(" <span class=\"high-lighter-block\">", "</span> ", "... ", false));
+            //highlighter.setFormatter(new DefaultPassageFormatter(" 【", "】 ", "... ", false));
             String[] contentHightFragments = highlighter.highlight("title", query, topDocs, 10); // 获取高亮显示结果
 
             for (int i = 0; i < topDocs.scoreDocs.length; i++) {
