@@ -25,6 +25,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -227,6 +228,52 @@ public class QueryTest extends LuceneLearnApplicationTests {
         SpanQuery query = new SpanNearQuery(new SpanQuery[]{quickQuery, brownQuery}, 1, true);
 
         queryData(query);
+    }
+
+    @DisplayName("multiReader 合并结果的多索引搜索")
+    @Test
+    public void multiReader() throws IOException, ParseException {
+        // 分布式存储、扩展性和灵活性、性能优化
+
+        Analyzer analyzer = new IKAnalyzer();
+
+        // 文档对象列表
+        List<Document> documents = new ArrayList<>();
+        // 收集文档数据
+        BaseDemoTest.collectDocument(documents);
+
+        List<Document> documents1 = documents.subList(0, documents.size() / 2);
+        List<Document> documents2 = documents.subList(documents.size() / 2, documents.size());
+
+        Directory indexDir1 = writeIndexDir(analyzer, documents1);
+        Directory indexDir2 = writeIndexDir(analyzer, documents2);
+
+        IndexReader reader1 = DirectoryReader.open(indexDir1);
+        IndexReader reader2 = DirectoryReader.open(indexDir2);
+
+        // 使用MultiReader将两个索引reader合并
+        MultiReader multiReader = new MultiReader(reader1, reader2);
+        IndexSearcher searcher = new IndexSearcher(multiReader);
+
+        // 创建查询
+        QueryParser parser = new QueryParser("title", analyzer);
+        Query query = parser.parse("谷歌地图之父和facebook关系");
+
+        // 执行搜索
+        TopDocs topDocs = searcher.search(query, 10); // 查找前10条结果
+        System.out.println("文档搜索结果，命中目标:" + topDocs.totalHits);
+        for (int i = 0; i < topDocs.scoreDocs.length; i++) {
+            ScoreDoc scoreDoc = topDocs.scoreDocs[i];
+            // 获取文档
+            Document doc = searcher.doc(scoreDoc.doc);
+
+            System.out.println("id:" + doc.get("id") + ",score:" + scoreDoc.score + ", \r\n\t\tcontent:" + doc.get("title"));
+        }
+
+        // 释放资源
+        multiReader.close();
+        indexDir1.close();
+        indexDir2.close();
     }
 
     private static Directory writeIndexDir() throws IOException {
